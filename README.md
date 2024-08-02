@@ -51,6 +51,3 @@ Contributions are welcome! If you'd like to contribute, please fork the reposito
 - Inspired by various image processing techniques and tools.
 - Thanks to the open-source community for providing valuable resources.
 
----
-
-Feel free to modify this documentation to suit your project specifics, including updating the GitHub repository link and adding any additional sections relevant to your project.
