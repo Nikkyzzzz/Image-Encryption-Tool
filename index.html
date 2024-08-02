@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Encryption Tool</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            color: #007bff;
+        }
+
+        #upload {
+            margin-bottom: 20px;
+            font-size: 1em;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+
+        #controls {
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        button {
+            padding: 12px 25px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #images {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 40px;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 1000px;
+            flex-wrap: wrap;
+        }
+
+        #images div {
+            flex: 1;
+            min-width: 320px;
+            text-align: center;
+        }
+
+        h2 {
+            margin-bottom: 10px;
+            font-size: 1.5em;
+            color: #333;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: 2px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Encryption Tool</h1>
+    <input type="file" id="upload" accept="image/*">
+    <div id="controls">
+        <button onclick="swapPixels()">Swap Pixels</button>
+        <button onclick="applyMathOperation('add')">Add 50</button>
+        <button onclick="applyMathOperation('subtract')">Subtract 50</button>
+        <button onclick="applyMathOperation('multiply')">Multiply by 1.2</button>
+        <button onclick="applyMathOperation('divide')">Divide by 1.2</button>
+        <button onclick="undo()">Undo</button>
+    </div>
+    <div id="images">
+        <div>
+            <h2>Original Image:</h2>
+            <img id="originalImage" src="" alt="Original Image">
+        </div>
+        <div>
+            <h2>Encrypted Image:</h2>
+            <img id="encryptedImage" src="" alt="Encrypted Image">
+        </div>
+    </div>
+
+    <script>
+        let imageHistory = [];
+
+        document.getElementById('upload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        processImage(img);
+                    }
+                    img.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function processImage(img) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const originalImage = document.getElementById('originalImage');
+            const encryptedImage = document.getElementById('encryptedImage');
+            
+            originalImage.src = canvas.toDataURL();
+
+            window.imageData = imageData;
+            saveHistory(imageData); // Save the initial state
+        }
+
+        function swapPixels() {
+            const data = window.imageData.data;
+            const width = window.imageData.width;
+            const height = window.imageData.height;
+            
+            // Swap a pair of pixels
+            const index1 = 0; // Top-left corner
+            const index2 = 4 * (width - 1) + 4 * (height - 1) * width; // Bottom-right corner
+
+            // Swap pixel data
+            for (let i = 0; i < 4; i++) {
+                const temp = data[index1 + i];
+                data[index1 + i] = data[index2 + i];
+                data[index2 + i] = temp;
+            }
+
+            updateImage();
+        }
+
+        function applyMathOperation(operation) {
+            const data = window.imageData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                if (operation === 'add') {
+                    data[i] = Math.min(data[i] + 50, 255);
+                    data[i + 1] = Math.min(data[i + 1] + 50, 255);
+                    data[i + 2] = Math.min(data[i + 2] + 50, 255);
+                } else if (operation === 'subtract') {
+                    data[i] = Math.max(data[i] - 50, 0);
+                    data[i + 1] = Math.max(data[i + 1] - 50, 0);
+                    data[i + 2] = Math.max(data[i + 2] - 50, 0);
+                } else if (operation === 'multiply') {
+                    data[i] = Math.min(data[i] * 1.2, 255);
+                    data[i + 1] = Math.min(data[i + 1] * 1.2, 255);
+                    data[i + 2] = Math.min(data[i + 2] * 1.2, 255);
+                } else if (operation === 'divide') {
+                    data[i] = Math.max(data[i] / 1.2, 0);
+                    data[i + 1] = Math.max(data[i + 1] / 1.2, 0);
+                    data[i + 2] = Math.max(data[i + 2] / 1.2, 0);
+                }
+            }
+
+            updateImage();
+        }
+
+        function updateImage() {
+            saveHistory(window.imageData); // Save current state
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.imageData.width;
+            canvas.height = window.imageData.height;
+            ctx.putImageData(window.imageData, 0, 0);
+
+            const encryptedImage = document.getElementById('encryptedImage');
+            encryptedImage.src = canvas.toDataURL();
+        }
+
+        function saveHistory(imageData) {
+            // Create a copy of imageData to save the current state
+            const copy = new ImageData(new Uint8ClampedArray(imageData.data), imageData.width, imageData.height);
+            imageHistory.push(copy);
+        }
+
+        function undo() {
+            if (imageHistory.length > 1) {
+                imageHistory.pop(); // Remove the current state
+                window.imageData = imageHistory[imageHistory.length - 1]; // Revert to the previous state
+
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.imageData.width;
+                canvas.height = window.imageData.height;
+                ctx.putImageData(window.imageData, 0, 0);
+
+                const encryptedImage = document.getElementById('encryptedImage');
+                encryptedImage.src = canvas.toDataURL();
+            } else {
+                alert("No more actions to undo.");
+            }
+        }
+    </script>
+</body>
+</html>
