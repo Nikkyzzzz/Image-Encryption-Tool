@@ -1,4 +1,4 @@
-# Image Encryption Tool
+# [Image Encryption Tool](https://nikkyzzzz.github.io/Image-Encryption-Tool/)
 
 Welcome to the **Image Encryption Tool** project! This tool allows you to apply simple encryption techniques to images using pixel manipulation. Users can swap pixel values or apply basic mathematical operations to each pixel. The tool is designed with a clean, professional interface and can be easily used by uploading an image file.
 
